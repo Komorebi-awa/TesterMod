@@ -1,0 +1,12 @@
+{
+  "item.tester_mod.tester_setter": "测试者设置器",
+  "entity.tester_mod.tester": "测试者",
+  "chat.tester_mod.damage_info": "[%s] 伤害：%s/%s, 类型：%s, 游戏刻：%s",
+  "chat.tester_mod.knockbackable.enabled": "允许击退",
+  "chat.tester_mod.knockbackable.disabled": "禁用击退",
+  "chat.tester_mod.hide_zero_damage.enabled": "隐藏零伤害",
+  "chat.tester_mod.hide_zero_damage.disabled": "显示零伤害",
+  "command.tester_mod.removed_self": "移除了你的 %s 个测试者",
+  "command.tester_mod.removed_all": "移除了世界中共 %s 个测试者",
+  "command.tester_mod.only_players": "只有玩家可以使用该指令"
+}

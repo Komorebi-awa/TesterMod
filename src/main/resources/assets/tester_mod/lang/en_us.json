@@ -1,0 +1,12 @@
+{
+  "item.tester_mod.tester_setter": "Tester Setter",
+  "entity.tester_mod.tester": "Tester",
+  "chat.tester_mod.damage_info": "[%s] Damage: %s/%s, Type: %s, Tick: %s",
+  "chat.tester_mod.knockbackable.enabled": "Knockback enabled",
+  "chat.tester_mod.knockbackable.disabled": "Knockback disabled",
+  "chat.tester_mod.hide_zero_damage.enabled": "Hide zero damage",
+  "chat.tester_mod.hide_zero_damage.disabled": "Show zero damage",
+  "command.tester_mod.removed_self": "Removed %s of your testers",
+  "command.tester_mod.removed_all": "Removed all %s testers from the world",
+  "command.tester_mod.only_players": "Only players can use this command"
+}
