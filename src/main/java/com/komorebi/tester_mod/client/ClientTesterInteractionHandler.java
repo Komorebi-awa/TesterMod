@@ -19,9 +19,17 @@ public final class ClientTesterInteractionHandler {
 
     @SubscribeEvent
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (event.getTarget() instanceof TesterEntity tester
+        if (event.getLevel().isClientSide()
+            && event.getTarget() instanceof TesterEntity tester
             && event.getItemStack().is(ModItems.TESTER_SETTER.get())) {
-            Minecraft.getInstance().setScreen(new TesterConfigScreen(tester));
+            Minecraft minecraft = Minecraft.getInstance();
+            int testerId = tester.getId();
+            minecraft.tell(() -> {
+                if (minecraft.level != null
+                    && minecraft.level.getEntity(testerId) instanceof TesterEntity clientTester) {
+                    minecraft.setScreen(new TesterConfigScreen(clientTester));
+                }
+            });
             event.setCancellationResult(InteractionResult.SUCCESS);
             event.setCanceled(true);
         }

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import com.komorebi.tester_mod.entity.tester.TesterEntity;
 import com.komorebi.tester_mod.network.UpdateTesterConfigPayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -29,6 +30,8 @@ public class TesterConfigScreen extends Screen {
 
     public TesterConfigScreen(TesterEntity tester) {
         super(Component.translatable("screen.tester_mod.config.title", tester.getName()));
+        this.minecraft = Minecraft.getInstance();
+        this.font = this.minecraft.font;
         this.tester = tester;
         this.knockbackable = tester.isKnockbackable();
         this.outputZeroDamage = tester.shouldOutputZeroDamage();
