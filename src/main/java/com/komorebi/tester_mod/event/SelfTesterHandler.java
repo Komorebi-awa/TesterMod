@@ -189,7 +189,7 @@ public final class SelfTesterHandler {
             }
             this.completed = true;
 
-            if (actualDamage <= 0.0F && !this.outputZeroDamage) {
+            if (damageAfterCooldown <= 0.0F && !this.outputZeroDamage) {
                 return;
             }
 

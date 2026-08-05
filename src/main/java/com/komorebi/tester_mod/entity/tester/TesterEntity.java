@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.komorebi.tester_mod.item.ModItems;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -184,6 +185,19 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
             return true;
         }
 
+        if (!level().isClientSide()
+            && source.getEntity() instanceof Player attacker
+            && attacker.getMainHandItem().is(ModItems.TESTER_SETTER.get())
+            && getOwnerUUID().filter(attacker.getUUID()::equals).isPresent()) {
+            DamageSource removeSource = new DamageSource(
+                level().registryAccess()
+                    .registryOrThrow(Registries.DAMAGE_TYPE)
+                    .getHolderOrThrow(REMOVE_TESTER),
+                attacker
+            );
+            return this.hurt(removeSource, Float.MAX_VALUE);
+        }
+
         if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             return false;
         }
@@ -197,7 +211,8 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
             this.damageReports.pop();
         }
 
-        if (!this.level().isClientSide() && (this.shouldOutputZeroDamage() || report.actualDamage > 0.0F)) {
+        if (!this.level().isClientSide()
+            && (this.shouldOutputZeroDamage() || report.damageAfterCooldown > 0.0F)) {
             this.sendDamageReport(source, report);
         }
         return hurtResult;

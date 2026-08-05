@@ -14,7 +14,7 @@
   "screen.tester_mod.self_config.damage_immunity": "Immune to damage except /kill: %s",
   "screen.tester_mod.config.title": "Configure %s",
   "screen.tester_mod.config.knockback": "Knockback: %s",
-  "screen.tester_mod.config.output_zero_damage": "Show zero actual damage: %s",
+  "screen.tester_mod.config.output_zero_damage": "Show zero PHDI damage: %s",
   "screen.tester_mod.config.armor": "Armor (0-30)",
   "screen.tester_mod.config.armor_toughness": "Armor toughness (0-20)",
   "screen.tester_mod.config.max_health": "Max health (1-1024)",

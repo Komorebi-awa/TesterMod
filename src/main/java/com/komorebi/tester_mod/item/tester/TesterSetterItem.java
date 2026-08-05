@@ -85,10 +85,6 @@ public class TesterSetterItem extends Item {
                 tester.setOwner(context.getPlayer());
             }
             serverLevel.addFreshEntity(tester);
-
-            if (context.getPlayer() != null && !context.getPlayer().getAbilities().instabuild) {
-                context.getItemInHand().shrink(1);
-            }
         }
 
         return InteractionResult.CONSUME;

@@ -14,7 +14,7 @@
   "screen.tester_mod.self_config.damage_immunity": "免疫除 /kill 外的伤害：%s",
   "screen.tester_mod.config.title": "配置 %s",
   "screen.tester_mod.config.knockback": "允许击退：%s",
-  "screen.tester_mod.config.output_zero_damage": "显示 0 实际伤害：%s",
+  "screen.tester_mod.config.output_zero_damage": "显示 PHDI 后的 0 伤害：%s",
   "screen.tester_mod.config.armor": "护甲值（0-30）",
   "screen.tester_mod.config.armor_toughness": "盔甲韧性（0-20）",
   "screen.tester_mod.config.max_health": "最大生命值（1-1024）",
