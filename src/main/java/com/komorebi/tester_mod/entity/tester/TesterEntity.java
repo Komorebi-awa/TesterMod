@@ -1,5 +1,8 @@
 package com.komorebi.tester_mod.entity.tester;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,7 +15,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -33,6 +35,13 @@ import net.minecraft.world.level.Level;
 
 public class TesterEntity extends Mob implements VillagerDataHolder {
 
+    public static final double MIN_ARMOR = 0.0;
+    public static final double MAX_ARMOR = 30.0;
+    public static final double MIN_ARMOR_TOUGHNESS = 0.0;
+    public static final double MAX_ARMOR_TOUGHNESS = 20.0;
+    public static final double MIN_MAX_HEALTH = 1.0;
+    public static final double MAX_MAX_HEALTH = 1024.0;
+
     private static final EntityDataAccessor<Optional<UUID>> DATA_OWNER_UUID =
         SynchedEntityData.defineId(TesterEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Boolean> DATA_KNOCKBACKABLE =
@@ -41,6 +50,7 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
         SynchedEntityData.defineId(TesterEntity.class, EntityDataSerializers.BOOLEAN);
 
     private VillagerData villagerData = new VillagerData(VillagerType.PLAINS, VillagerProfession.NITWIT, 1);
+    private final Deque<DamageReport> damageReports = new ArrayDeque<>();
 
     public static final ResourceKey<DamageType> REMOVE_TESTER =
         ResourceKey.create(Registries.DAMAGE_TYPE,
@@ -53,6 +63,8 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 1000.0)
+            .add(Attributes.ARMOR, 0.0)
+            .add(Attributes.ARMOR_TOUGHNESS, 0.0)
             .add(Attributes.MOVEMENT_SPEED, 0.0)
             .add(Attributes.KNOCKBACK_RESISTANCE, 0.0);
     }
@@ -73,12 +85,38 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
         return this.entityData.get(DATA_KNOCKBACKABLE);
     }
 
-    public void setHideZeroDamage(boolean hideZeroDamage) {
-        this.entityData.set(DATA_HIDE_ZERO_DAMAGE, hideZeroDamage);
+    public void setOutputZeroDamage(boolean outputZeroDamage) {
+        this.entityData.set(DATA_HIDE_ZERO_DAMAGE, !outputZeroDamage);
     }
 
-    public boolean isHideZeroDamage() {
-        return this.entityData.get(DATA_HIDE_ZERO_DAMAGE);
+    public boolean shouldOutputZeroDamage() {
+        return !this.entityData.get(DATA_HIDE_ZERO_DAMAGE);
+    }
+
+    public static boolean isValidConfiguration(double armor, double armorToughness, double maxHealth) {
+        return Double.isFinite(armor)
+            && Double.isFinite(armorToughness)
+            && Double.isFinite(maxHealth)
+            && armor >= MIN_ARMOR
+            && armor <= MAX_ARMOR
+            && armorToughness >= MIN_ARMOR_TOUGHNESS
+            && armorToughness <= MAX_ARMOR_TOUGHNESS
+            && maxHealth >= MIN_MAX_HEALTH
+            && maxHealth <= MAX_MAX_HEALTH;
+    }
+
+    public void applyConfiguration(boolean knockbackable, boolean outputZeroDamage,
+                                   double armor, double armorToughness, double maxHealth) {
+        if (!isValidConfiguration(armor, armorToughness, maxHealth)) {
+            return;
+        }
+
+        this.setKnockbackable(knockbackable);
+        this.setOutputZeroDamage(outputZeroDamage);
+        this.getAttribute(Attributes.ARMOR).setBaseValue(armor);
+        this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(armorToughness);
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
+        this.setHealth(this.getMaxHealth());
     }
 
     @Override
@@ -96,7 +134,7 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
         super.addAdditionalSaveData(compound);
         getOwnerUUID().ifPresent(uuid -> compound.putUUID("Owner", uuid));
         compound.putBoolean("Knockbackable", isKnockbackable());
-        compound.putBoolean("HideZeroDamage", isHideZeroDamage());
+        compound.putBoolean("HideZeroDamage", !shouldOutputZeroDamage());
     }
 
     @Override
@@ -126,14 +164,6 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
     }
 
     @Override
-    public void aiStep() {
-        super.aiStep();
-        if (this.invulnerableTime <= 0) {
-            this.lastHurt = 0;
-        }
-    }
-
-    @Override
     public void tick() {
         super.tick();
         if (level().isClientSide() && random.nextFloat() < 0.05f) {
@@ -158,69 +188,70 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
             return false;
         }
 
-        float actualDamage = amount;
-
-        if (this.invulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
-            if (amount <= this.lastHurt) {
-                actualDamage = 0;
-            } else {
-                actualDamage = amount - this.lastHurt;
-            }
+        DamageReport report = new DamageReport(amount);
+        this.damageReports.push(report);
+        boolean hurtResult;
+        try {
+            hurtResult = super.hurt(source, amount);
+        } finally {
+            this.damageReports.pop();
         }
 
-        if (!source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
-            if (actualDamage > 0) {
-                this.lastHurt = amount;
-                this.invulnerableTime = 10;
-            }
-        } else {
-            this.lastHurt = amount;
-            this.invulnerableTime = 10;
+        if (!this.level().isClientSide() && (this.shouldOutputZeroDamage() || report.actualDamage > 0.0F)) {
+            this.sendDamageReport(source, report);
+        }
+        return hurtResult;
+    }
+
+    @Override
+    protected void actuallyHurt(DamageSource source, float amount) {
+        DamageReport report = this.damageReports.peek();
+        if (report != null) {
+            report.damageAfterCooldown = amount;
         }
 
-        final float displayActual = actualDamage;
-
-        if (!this.level().isClientSide()) {
-            if (!(this.isHideZeroDamage() && displayActual == 0)) {
-                getOwnerUUID().ifPresent(uuid -> {
-                    Player player = level().getPlayerByUUID(uuid);
-                    if (player != null) {
-                        long gameTick = level().getGameTime();
-                        String damageTypeName = source.getMsgId();
-                        player.sendSystemMessage(Component.translatable(
-                            "chat.tester_mod.damage_info",
-                            this.getName().getString(),
-                            String.format("%.1f", displayActual),
-                            String.format("%.1f", amount),
-                            damageTypeName,
-                            String.valueOf(gameTick)
-                        ));
-                    }
-                });
-                ((ServerLevel) this.level()).playSound(null, this.getX(), this.getY(), this.getZ(),
-                    SoundEvents.VILLAGER_HURT, this.getSoundSource(),
-                    this.getSoundVolume(), this.getVoicePitch());
+        float previousHealth = this.getHealth();
+        float previousAbsorption = this.getAbsorptionAmount();
+        try {
+            super.actuallyHurt(source, amount);
+            if (report != null) {
+                report.actualDamage = Math.max(0.0F, previousHealth - this.getHealth());
             }
+        } finally {
+            this.setHealth(previousHealth);
+            this.setAbsorptionAmount(previousAbsorption);
         }
+    }
 
+    private void sendDamageReport(DamageSource source, DamageReport report) {
+        getOwnerUUID().ifPresent(uuid -> {
+            Player player = level().getPlayerByUUID(uuid);
+            if (player != null) {
+                player.sendSystemMessage(Component.translatable(
+                    "chat.tester_mod.damage_info",
+                    this.getName().getString(),
+                    String.format(Locale.ROOT, "%.1f", report.actualDamage),
+                    String.format(Locale.ROOT, "%.1f", report.damageAfterCooldown),
+                    String.format(Locale.ROOT, "%.1f", report.originalDamage),
+                    source.getMsgId(),
+                    String.valueOf(level().getGameTime())
+                ));
+            }
+        });
+    }
+
+    @Override
+    public void knockback(double strength, double x, double z) {
         if (this.isKnockbackable()) {
-            if (!source.is(DamageTypeTags.NO_KNOCKBACK) && source.getSourcePosition() != null) {
-                double dx = source.getSourcePosition().x() - this.getX();
-                double dz = source.getSourcePosition().z() - this.getZ();
-                this.knockback(0.4, dx, dz);
-            }
-            if (!source.is(DamageTypeTags.NO_IMPACT)) {
-                this.markHurt();
-                if (source.getSourcePosition() != null) {
-                    this.indicateDamage(
-                        source.getSourcePosition().x() - this.getX(),
-                        source.getSourcePosition().z() - this.getZ()
-                    );
-                }
-            }
+            super.knockback(strength, x, z);
         }
+    }
 
-        return false;
+    @Override
+    public void markHurt() {
+        if (this.isKnockbackable()) {
+            super.markHurt();
+        }
     }
 
     @Override
@@ -263,5 +294,16 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
     @Override
     protected boolean shouldDespawnInPeaceful() {
         return false;
+    }
+
+    private static final class DamageReport {
+
+        private final float originalDamage;
+        private float damageAfterCooldown;
+        private float actualDamage;
+
+        private DamageReport(float originalDamage) {
+            this.originalDamage = originalDamage;
+        }
     }
 }
