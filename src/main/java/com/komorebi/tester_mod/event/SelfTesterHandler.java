@@ -188,7 +188,8 @@ public final class SelfTesterHandler {
         int cooldownTicks = getRemainingCooldownTicks(player, testerShield);
         player.sendSystemMessage(Component.translatable(
             "chat.tester_mod.shield_blocked",
-            cooldownTicks
+            cooldownTicks,
+            player.level().getGameTime()
         ));
         player.getCooldowns().removeCooldown(testerShield);
     }

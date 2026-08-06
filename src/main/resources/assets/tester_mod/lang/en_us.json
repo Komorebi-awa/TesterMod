@@ -11,7 +11,7 @@
   "chat.tester_mod.self_tester.survival_only": "Player tester mode is only available in Survival mode",
   "chat.tester_mod.self_tester.not_enabled": "Enable player tester mode first",
   "chat.tester_mod.self_tester.configuration_applied": "Player tester configuration applied",
-  "chat.tester_mod.shield_blocked": "Tester Shield blocked a hit; disabled for %s ticks",
+  "chat.tester_mod.shield_blocked": "Tester Shield blocked a hit; disabled for %s t, game tick: %s",
   "screen.tester_mod.self_config.title": "Player Tester Configuration",
   "screen.tester_mod.self_config.damage_immunity": "Immune to damage except /kill: %s",
   "screen.tester_mod.config.title": "Configure %s",
