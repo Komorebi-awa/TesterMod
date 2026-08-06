@@ -14,6 +14,7 @@ public class CreativeModeTabHandler {
     public static void buildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(ModItems.TESTER_SETTER.get());
+            event.accept(ModItems.TESTER_SHIELD.get());
         }
     }
 }

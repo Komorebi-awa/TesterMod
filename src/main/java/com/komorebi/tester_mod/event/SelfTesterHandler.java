@@ -8,11 +8,14 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.komorebi.tester_mod.ModMain;
+import com.komorebi.tester_mod.item.ModItems;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.level.GameType;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +23,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 @EventBusSubscriber(modid = ModMain.MODID)
@@ -134,6 +138,21 @@ public final class SelfTesterHandler {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    public static void onShieldBlock(LivingShieldBlockEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)
+            || player.gameMode.getGameModeForPlayer() != GameType.SURVIVAL
+            || !isEnabled(player)
+            || !player.getUseItem().is(ModItems.TESTER_SHIELD.get())) {
+            return;
+        }
+
+        player.server.tell(new TickTask(
+            player.server.getTickCount(),
+            () -> reportShieldBlock(player, event)
+        ));
+    }
+
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
         copyBoolean(event, SELF_TESTER_MODE_TAG);
@@ -158,6 +177,31 @@ public final class SelfTesterHandler {
                 PENDING_HEALTH_RESTORES.remove(pending.player);
             }
         }
+    }
+
+    private static void reportShieldBlock(ServerPlayer player, LivingShieldBlockEvent event) {
+        if (event.isCanceled() || !event.getBlocked()) {
+            return;
+        }
+
+        Item testerShield = ModItems.TESTER_SHIELD.get();
+        int cooldownTicks = getRemainingCooldownTicks(player, testerShield);
+        player.sendSystemMessage(Component.translatable(
+            "chat.tester_mod.shield_blocked",
+            cooldownTicks
+        ));
+        player.getCooldowns().removeCooldown(testerShield);
+    }
+
+    private static int getRemainingCooldownTicks(ServerPlayer player, Item item) {
+        ItemCooldowns cooldowns = player.getCooldowns();
+        ItemCooldowns.CooldownInstance cooldown = cooldowns.cooldowns.get(item);
+        if (cooldown == null) {
+            return 0;
+        }
+
+        int remainingTicks = cooldown.endTime - cooldowns.tickCount;
+        return remainingTicks > 0 ? remainingTicks + 1 : 0;
     }
 
     private static final class PendingDamage {
