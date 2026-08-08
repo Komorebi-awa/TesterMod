@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.komorebi.tester_mod.ModMain;
 import com.komorebi.tester_mod.item.ModItems;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerPlayer;
@@ -188,8 +189,8 @@ public final class SelfTesterHandler {
         int cooldownTicks = getRemainingCooldownTicks(player, testerShield);
         player.sendSystemMessage(Component.translatable(
             "chat.tester_mod.shield_blocked",
-            cooldownTicks,
-            player.level().getGameTime()
+            Component.literal(String.valueOf(cooldownTicks)).withStyle(ChatFormatting.RED),
+            Component.literal(String.valueOf(player.level().getGameTime())).withStyle(ChatFormatting.GREEN)
         ));
         player.getCooldowns().removeCooldown(testerShield);
     }
@@ -240,12 +241,12 @@ public final class SelfTesterHandler {
 
             this.player.sendSystemMessage(Component.translatable(
                 "chat.tester_mod.damage_info",
-                this.player.getName().getString(),
-                String.format(Locale.ROOT, "%.1f", actualDamage),
-                String.format(Locale.ROOT, "%.1f", damageAfterCooldown),
-                String.format(Locale.ROOT, "%.1f", this.originalDamage),
-                this.damageTypeName,
-                String.valueOf(this.gameTick)
+                Component.literal(this.player.getName().getString()).withStyle(ChatFormatting.GREEN),
+                Component.literal(String.format(Locale.ROOT, "%.1f", actualDamage)).withStyle(ChatFormatting.RED),
+                Component.literal(String.format(Locale.ROOT, "%.1f", damageAfterCooldown)).withStyle(ChatFormatting.RED),
+                Component.literal(String.format(Locale.ROOT, "%.1f", this.originalDamage)).withStyle(ChatFormatting.RED),
+                Component.literal(this.damageTypeName).withStyle(ChatFormatting.RED),
+                Component.literal(String.valueOf(this.gameTick)).withStyle(ChatFormatting.GREEN)
             ));
         }
     }

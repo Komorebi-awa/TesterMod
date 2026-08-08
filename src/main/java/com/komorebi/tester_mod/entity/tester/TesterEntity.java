@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.komorebi.tester_mod.item.ModItems;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -244,12 +245,12 @@ public class TesterEntity extends Mob implements VillagerDataHolder {
             if (player != null) {
                 player.sendSystemMessage(Component.translatable(
                     "chat.tester_mod.damage_info",
-                    this.getName().getString(),
-                    String.format(Locale.ROOT, "%.1f", report.actualDamage),
-                    String.format(Locale.ROOT, "%.1f", report.damageAfterCooldown),
-                    String.format(Locale.ROOT, "%.1f", report.originalDamage),
-                    source.getMsgId(),
-                    String.valueOf(level().getGameTime())
+                    Component.literal(this.getName().getString()).withStyle(ChatFormatting.GREEN),
+                    Component.literal(String.format(Locale.ROOT, "%.1f", report.actualDamage)).withStyle(ChatFormatting.RED),
+                    Component.literal(String.format(Locale.ROOT, "%.1f", report.damageAfterCooldown)).withStyle(ChatFormatting.RED),
+                    Component.literal(String.format(Locale.ROOT, "%.1f", report.originalDamage)).withStyle(ChatFormatting.RED),
+                    Component.literal(source.getMsgId()).withStyle(ChatFormatting.RED),
+                    Component.literal(String.valueOf(level().getGameTime())).withStyle(ChatFormatting.GREEN)    
                 ));
             }
         });
